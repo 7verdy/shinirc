@@ -1,6 +1,7 @@
 import gleam/list
 import lustre
 import lustre/attribute
+import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
@@ -9,7 +10,7 @@ import lustre/ui
 // MAIN ------------------------------------------------------------------------
 
 pub fn app() {
-  lustre.simple(init, update, view)
+  lustre.application(init, update, view)
 }
 
 // MODEL -----------------------------------------------------------------------
@@ -22,8 +23,8 @@ pub type Model {
   Model(current_message: Message, messages: List(Message))
 }
 
-fn init(_) -> Model {
-  Model(Message("lustre", "Hello, world!"), [])
+fn init(_) -> #(Model, Effect(Msg)) {
+  #(Model(Message("lustre", "Hello, world!"), []), effect.none())
 }
 
 // UPDATE ----------------------------------------------------------------------
@@ -34,17 +35,23 @@ pub opaque type Msg {
   UpdateMessage(String)
 }
 
-fn update(model: Model, msg: Msg) -> Model {
+fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    Send(username, message) ->
+    Send(username, message) -> #(
       Model(Message(username, message), [
         Message(username, message),
         ..model.messages
-      ])
-    UpdateUsername(username) ->
-      Model(Message(username, model.current_message.message), model.messages)
-    UpdateMessage(message) ->
-      Model(Message(model.current_message.username, message), model.messages)
+      ]),
+      effect.none(),
+    )
+    UpdateUsername(username) -> #(
+      Model(Message(username, model.current_message.message), model.messages),
+      effect.none(),
+    )
+    UpdateMessage(message) -> #(
+      Model(Message(model.current_message.username, message), model.messages),
+      effect.none(),
+    )
   }
 }
 
