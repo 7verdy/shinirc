@@ -1,3 +1,4 @@
+import gleam/io
 import gleam/list
 import lustre
 import lustre/attribute
@@ -20,38 +21,37 @@ pub opaque type Message {
 }
 
 pub type Model {
-  Model(current_message: Message, messages: List(Message))
+  Model(username: String, message: String, messages: List(Message))
 }
 
 fn init(_) -> #(Model, Effect(Msg)) {
-  #(Model(Message("lustre", "Hello, world!"), []), effect.none())
+  #(Model("", "", []), effect.none())
 }
 
 // UPDATE ----------------------------------------------------------------------
 
 pub opaque type Msg {
-  Send(username: String, message: String)
+  Send
   UpdateUsername(String)
   UpdateMessage(String)
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    Send(username, message) -> #(
-      Model(Message(username, message), [
-        Message(username, message),
-        ..model.messages
-      ]),
-      effect.none(),
-    )
+    Send -> {
+      #(
+        Model(model.username, "", [
+          Message(model.username, model.message),
+          ..model.messages
+        ]),
+        effect.none(),
+      )
+    }
     UpdateUsername(username) -> #(
-      Model(Message(username, model.current_message.message), model.messages),
+      Model(..model, username: username),
       effect.none(),
     )
-    UpdateMessage(message) -> #(
-      Model(Message(model.current_message.username, message), model.messages),
-      effect.none(),
-    )
+    UpdateMessage(message) -> #(Model(..model, message: message), effect.none())
   }
 }
 
@@ -59,9 +59,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
 fn view(model: Model) -> Element(Msg) {
   let text_styles = [#("color", "white"), #("font-family", "Arial, sans-serif")]
-
-  let current_message = model.current_message
-  let username = current_message.username
 
   html.div([attribute.id("app")], [
     html.div([attribute.id("sidebar")], [
@@ -94,31 +91,20 @@ fn view(model: Model) -> Element(Msg) {
       ]),
       html.div([attribute.id("message-form")], [
         ui.input([
-          attribute.id("username"),
-          attribute.value(username),
+          attribute.id("username-input"),
+          attribute.value(model.username),
           attribute.placeholder("Type your username..."),
           event.on_input(UpdateUsername),
         ]),
         ui.input([
-          attribute.id("message"),
-          attribute.value(model.current_message.message),
+          attribute.id("message-input"),
+          attribute.value(model.message),
           attribute.placeholder("Type a message..."),
           event.on_input(UpdateMessage),
         ]),
-        ui.button(
-          [
-            attribute.style([
-              #("background-color", "#5c61ed"),
-              #("color", "white"),
-              #("padding", "0.5rem 1rem"),
-              #("border", "none"),
-              #("border-radius", "0.25rem"),
-              #("margin-left", "0.5rem"),
-            ]),
-            event.on_click(Send(username, model.current_message.message)),
-          ],
-          [element.text("Send")],
-        ),
+        ui.button([attribute.id("send-button"), event.on_click(Send)], [
+          element.text("Send"),
+        ]),
       ]),
     ]),
   ])

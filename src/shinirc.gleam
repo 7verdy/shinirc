@@ -62,6 +62,22 @@ pub fn main() {
           })
         }
 
+        ["script.js"] -> {
+          let assert Ok(priv) = erlang.priv_directory("shinirc")
+          let path = priv <> "/static/script.js"
+
+          mist.send_file(path, offset: 0, limit: None)
+          |> result.map(fn(js) {
+            response.new(200)
+            |> response.prepend_header("content-type", "application/javascript")
+            |> response.set_body(js)
+          })
+          |> result.lazy_unwrap(fn() {
+            response.new(404)
+            |> response.set_body(mist.Bytes(bytes_builder.new()))
+          })
+        }
+
         _ ->
           response.new(200)
           |> response.prepend_header("content-type", "text/html")
@@ -85,6 +101,7 @@ pub fn main() {
                   ],
                   "",
                 ),
+                html.script([attribute.src("/script.js")], ""),
               ]),
               html.body([], [
                 server_component.component([server_component.route("/shinirc")]),

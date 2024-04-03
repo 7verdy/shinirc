@@ -74,3 +74,9 @@ body {
     align-items: center;
     margin-top: 1rem;
 }
+
+button#send-button {
+    padding: 0.5rem 1rem;
+    border: none;
+    margin-inline: 0.25rem; 
+}
