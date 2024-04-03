@@ -1,0 +1,76 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: red;
+}
+
+#app {
+    background: linear-gradient(70deg, rgba(24, 26, 33, 1) 0%, rgba(36, 38, 46, 1) 100%);
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+}
+
+#sidebar {
+    width: 25%;
+    height: 100%;
+    background-color: #2d2e37;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+#message-form {
+    width: 65%;
+}
+
+#message-form > input {
+    margin-inline: 0.25rem;
+    background-color: #2b2c33;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+}
+
+#message-form > input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+#message-form #message {
+    width: 50%;
+}
+
+#channel-messages {
+    height: 93vh;
+    width: 100%;
+    overflow-y: scroll;
+    display: flex;
+    align-items: flex-end;
+    padding-inline: 4rem;
+    padding-bottom: 2rem;
+}
+
+#channel-messages ul {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+#channel-messages li {
+    color: white;
+}
+
+#chat {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#title-desc {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1rem;
+}

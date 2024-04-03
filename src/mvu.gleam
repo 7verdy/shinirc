@@ -58,36 +58,68 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 // VIEW ------------------------------------------------------------------------
 
 fn view(model: Model) -> Element(Msg) {
-  let styles = [#("width", "100vw"), #("height", "100vh"), #("padding", "1rem")]
+  let text_styles = [#("color", "white"), #("font-family", "Arial, sans-serif")]
+
   let current_message = model.current_message
   let username = current_message.username
 
-  html.div([attribute.style(styles)], [
-    html.h1([], [element.text("ShinIRC")]),
-    html.p([], [element.text("A simple chat app made with Lustre")]),
-    html.div([], [element.text("Messages")]),
-    case model.messages {
-      [] -> html.p([], [element.text("No messages yet")])
-      _ -> {
-        html.ul(
-          [],
-          model.messages
-            |> list.map(fn(message) {
-              html.li([], [
-                element.text(message.username <> ": " <> message.message),
-              ])
-            }),
-        )
-      }
-    },
-    html.div([], [element.text("Send a message")]),
-    ui.input([attribute.value(username), event.on_input(UpdateUsername)]),
-    ui.input([
-      attribute.value(model.current_message.message),
-      event.on_input(UpdateMessage),
+  html.div([attribute.id("app")], [
+    html.div([attribute.id("sidebar")], [
+      html.div([attribute.id("title-desc")], [
+        html.h1([attribute.style(text_styles)], [element.text("ShinIRC")]),
+        html.p([attribute.style([#("text-align", "center")])], [
+          element.text("A simple chat app made with Lustre"),
+        ]),
+      ]),
     ]),
-    ui.button([event.on_click(Send(username, model.current_message.message))], [
-      element.text("Send"),
+    html.div([attribute.id("chat")], [
+      html.div([attribute.id("channel-messages")], [
+        case model.messages {
+          [] ->
+            html.p([attribute.style(text_styles)], [
+              element.text("No messages yet"),
+            ])
+          _ -> {
+            html.ul(
+              [],
+              model.messages
+                |> list.map(fn(message) {
+                  html.li([], [
+                    element.text(message.username <> ": " <> message.message),
+                  ])
+                }),
+            )
+          }
+        },
+      ]),
+      html.div([attribute.id("message-form")], [
+        ui.input([
+          attribute.id("username"),
+          attribute.value(username),
+          attribute.placeholder("Type your username..."),
+          event.on_input(UpdateUsername),
+        ]),
+        ui.input([
+          attribute.id("message"),
+          attribute.value(model.current_message.message),
+          attribute.placeholder("Type a message..."),
+          event.on_input(UpdateMessage),
+        ]),
+        ui.button(
+          [
+            attribute.style([
+              #("background-color", "#5c61ed"),
+              #("color", "white"),
+              #("padding", "0.5rem 1rem"),
+              #("border", "none"),
+              #("border-radius", "0.25rem"),
+              #("margin-left", "0.5rem"),
+            ]),
+            event.on_click(Send(username, model.current_message.message)),
+          ],
+          [element.text("Send")],
+        ),
+      ]),
     ]),
   ])
 }
