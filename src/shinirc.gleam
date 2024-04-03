@@ -46,6 +46,22 @@ pub fn main() {
           })
         }
 
+        ["style.css"] -> {
+          let assert Ok(priv) = erlang.priv_directory("shinirc")
+          let path = priv <> "/static/style.css"
+
+          mist.send_file(path, offset: 0, limit: None)
+          |> result.map(fn(css) {
+            response.new(200)
+            |> response.prepend_header("content-type", "text/css")
+            |> response.set_body(css)
+          })
+          |> result.lazy_unwrap(fn() {
+            response.new(404)
+            |> response.set_body(mist.Bytes(bytes_builder.new()))
+          })
+        }
+
         _ ->
           response.new(200)
           |> response.prepend_header("content-type", "text/html")
@@ -57,6 +73,10 @@ pub fn main() {
                   attribute.href(
                     "https://cdn.jsdelivr.net/gh/lustre-labs/ui/priv/styles.css",
                   ),
+                ]),
+                html.link([
+                  attribute.rel("stylesheet"),
+                  attribute.href("/style.css"),
                 ]),
                 html.script(
                   [
