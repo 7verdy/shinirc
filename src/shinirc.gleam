@@ -8,6 +8,7 @@ import gleam/json
 import gleam/option.{type Option, None}
 import gleam/otp/actor
 import gleam/result
+import gluid
 import lustre
 import lustre/attribute
 import lustre/element
@@ -18,14 +19,24 @@ import mist.{
   type WebsocketMessage,
 }
 
+type SocketState {
+  SocketState(
+    messages: Subject(lustre.Action(mvu.Msg, lustre.ServerComponent)),
+    id: String,
+  )
+}
+
 pub fn main() {
+  let app = mvu.app()
+  let assert Ok(shinirc) = lustre.start_actor(app, 0)
+
   let assert Ok(_) =
     fn(req: Request(Connection)) -> Response(ResponseData) {
       case request.path_segments(req) {
         ["shinirc"] ->
           mist.websocket(
             request: req,
-            on_init: socket_init,
+            on_init: socket_init(_, shinirc),
             on_close: socket_close,
             handler: socket_update,
           )
@@ -127,13 +138,13 @@ type Shinirc =
 
 fn socket_init(
   conn: WebsocketConnection,
-) -> #(Shinirc, Option(Selector(lustre.Patch(mvu.Msg)))) {
-  let app = mvu.app()
-  let assert Ok(shinirc) = lustre.start_actor(app, 0)
+  messages: Subject(lustre.Action(mvu.Msg, lustre.ServerComponent)),
+) -> #(SocketState, Option(Selector(lustre.Patch(mvu.Msg)))) {
+  let id = gluid.guidv4()
 
   process.send(
-    shinirc,
-    server_component.subscribe("ws", fn(patch) {
+    messages,
+    server_component.subscribe(id, fn(patch) {
       patch
       |> server_component.encode_patch
       |> json.to_string
@@ -143,11 +154,11 @@ fn socket_init(
     }),
   )
 
-  #(shinirc, None)
+  #(SocketState(messages, id), None)
 }
 
 fn socket_update(
-  shinirc: Shinirc,
+  state: SocketState,
   _conn: WebsocketConnection,
   msg: WebsocketMessage(lustre.Patch(mvu.Msg)),
 ) {
@@ -156,19 +167,19 @@ fn socket_update(
       let action = json.decode(json, server_component.decode_action)
 
       case action {
-        Ok(action) -> process.send(shinirc, action)
+        Ok(action) -> process.send(state.messages, action)
         Error(_) -> Nil
       }
 
-      actor.continue(shinirc)
+      actor.continue(state)
     }
 
-    mist.Binary(_) -> actor.continue(shinirc)
-    mist.Custom(_) -> actor.continue(shinirc)
+    mist.Binary(_) -> actor.continue(state)
+    mist.Custom(_) -> actor.continue(state)
     mist.Closed | mist.Shutdown -> actor.Stop(process.Normal)
   }
 }
 
-fn socket_close(shinirc: Shinirc) {
-  process.send(shinirc, lustre.shutdown())
+fn socket_close(state: SocketState) {
+  process.send(state.messages, server_component.unsubscribe(state.id))
 }
