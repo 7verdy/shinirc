@@ -23,6 +23,7 @@ body {
 }
 
 #message-form {
+    display: flex;
     width: 65%;
 }
 
@@ -38,7 +39,7 @@ body {
     color: rgba(255, 255, 255, 0.5);
 }
 
-#message-form #message {
+#message-form #message-input {
     width: 50%;
 }
 
