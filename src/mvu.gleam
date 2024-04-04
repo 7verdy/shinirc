@@ -1,5 +1,10 @@
+import birl
+import birl/duration
+import gleam/int
 import gleam/io
 import gleam/list
+import gleam/result
+import gleam/string
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
@@ -17,15 +22,21 @@ pub fn app() {
 // MODEL -----------------------------------------------------------------------
 
 pub opaque type Message {
-  Message(username: String, message: String)
+  Message(username: String, message: String, timestamp: String, channel: String)
 }
 
 pub type Model {
-  Model(username: String, message: String, messages: List(Message))
+  Model(
+    username: String,
+    message: String,
+    timestamp: String,
+    channel: String,
+    messages: List(Message),
+  )
 }
 
 fn init(_) -> #(Model, Effect(Msg)) {
-  #(Model("", "", []), effect.none())
+  #(Model("", "", "", "shinirc-1", []), effect.none())
 }
 
 // UPDATE ----------------------------------------------------------------------
@@ -40,8 +51,13 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     Send -> {
       #(
-        Model(model.username, "", [
-          Message(model.username, model.message),
+        Model(model.username, "", "", model.channel, [
+          Message(
+            model.username,
+            model.message,
+            birl.to_time_string(birl.now()),
+            model.channel,
+          ),
           ..model.messages
         ]),
         effect.none(),
@@ -55,10 +71,48 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
+// UTILS -----------------------------------------------------------------------
+
+fn time_beautifier(time: String) -> String {
+  let splits =
+    time
+    |> string.split(":")
+    |> list.map(fn(x) { result.unwrap(int.parse(x), 0) })
+  let hours = result.unwrap(list.at(splits, 0), 0)
+  let minutes = result.unwrap(list.at(splits, 1), 0)
+
+  let now = birl.to_time_string(birl.now())
+  let now_splits =
+    now
+    |> string.split(":")
+    |> list.map(fn(x) { result.unwrap(int.parse(x), 0) })
+  let now_hours = result.unwrap(list.at(now_splits, 0), 0)
+  let now_minutes = result.unwrap(list.at(now_splits, 1), 0)
+
+  case hours {
+    hour if now_hours < hour -> "Yesterday at " <> time
+    hour if now_hours == hour -> {
+      case minutes {
+        minute if now_minutes < minute ->
+          "Yesterday at "
+          <> int.to_string(hours)
+          <> ":"
+          <> int.to_string(minutes)
+        minute if now_minutes == minute ->
+          "Today at " <> int.to_string(hours) <> ":" <> int.to_string(minutes)
+        _ ->
+          "Today at " <> int.to_string(hours) <> ":" <> int.to_string(minutes)
+      }
+    }
+    _ -> "Today at " <> int.to_string(hours) <> ":" <> int.to_string(minutes)
+  }
+}
+
 // VIEW ------------------------------------------------------------------------
 
 fn view(model: Model) -> Element(Msg) {
   let text_styles = [#("color", "white"), #("font-family", "Arial, sans-serif")]
+  let channel_list = ["shinirc-1", "shinirc-2", "shinirc-3"]
 
   html.div([attribute.id("app")], [
     html.div([attribute.id("sidebar")], [
@@ -71,7 +125,7 @@ fn view(model: Model) -> Element(Msg) {
     ]),
     html.div([attribute.id("chat")], [
       html.div([attribute.id("channel-title")], [
-        html.h2([attribute.style(text_styles)], [element.text("General")]),
+        html.h2([attribute.style(text_styles)], [element.text(model.channel)]),
       ]),
       html.div([attribute.id("channel-messages")], [
         case model.messages {
@@ -85,7 +139,13 @@ fn view(model: Model) -> Element(Msg) {
               model.messages
                 |> list.map(fn(message) {
                   html.li([], [
-                    element.text(message.username <> ": " <> message.message),
+                    element.text(
+                      time_beautifier(message.timestamp)
+                      <> " | "
+                      <> message.username
+                      <> ": "
+                      <> message.message,
+                    ),
                   ])
                 }),
             )
