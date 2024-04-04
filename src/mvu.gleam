@@ -45,6 +45,7 @@ pub opaque type Msg {
   Send
   UpdateUsername(String)
   UpdateMessage(String)
+  UpdateChannel(String)
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -68,6 +69,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       effect.none(),
     )
     UpdateMessage(message) -> #(Model(..model, message: message), effect.none())
+    UpdateChannel(channel) -> #(Model(..model, channel: channel), effect.none())
   }
 }
 
@@ -121,6 +123,19 @@ fn view(model: Model) -> Element(Msg) {
         html.p([attribute.style([#("text-align", "center")])], [
           element.text("A simple chat app made with Lustre"),
         ]),
+      ]),
+      html.div([attribute.id("channel-list")], [
+        html.ul(
+          [],
+          channel_list
+            |> list.map(fn(channel) {
+              html.li([], [
+                ui.button([event.on_click(UpdateChannel(channel))], [
+                  element.text(channel),
+                ]),
+              ])
+            }),
+        ),
       ]),
     ]),
     html.div([attribute.id("chat")], [
