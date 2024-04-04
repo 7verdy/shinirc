@@ -1,5 +1,6 @@
 import birl
 import birl/duration
+import db
 import gleam/int
 import gleam/io
 import gleam/list
@@ -46,6 +47,8 @@ pub opaque type Msg {
   UpdateUsername(String)
   UpdateMessage(String)
   UpdateChannel(String)
+  GotResponse(Nil)
+  GotMessages(List(Message))
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
@@ -70,6 +73,13 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
     UpdateMessage(message) -> #(Model(..model, message: message), effect.none())
     UpdateChannel(channel) -> #(Model(..model, channel: channel), effect.none())
+    GotResponse(Nil) -> {
+      #(model, effect.none())
+    }
+    GotMessages(messages) -> #(
+      Model(..model, messages: messages),
+      effect.none(),
+    )
   }
 }
 
@@ -108,6 +118,35 @@ fn time_beautifier(time: String) -> String {
     }
     _ -> "Today at " <> int.to_string(hours) <> ":" <> int.to_string(minutes)
   }
+}
+
+// EFFECTS ---------------------------------------------------------------------
+
+fn add_expense(message: Message) -> effect.Effect(Msg) {
+  use dispatch <- effect.from
+
+  let post =
+    db.send_data(message.channel, #(
+      message.username,
+      message.message,
+      message.timestamp,
+    ))
+
+  dispatch(GotResponse(post))
+}
+
+// TODO: Implement fetching expenses from a database
+fn fetch_expenses(channel: String) -> effect.Effect(Msg) {
+  use dispatch <- effect.from
+
+  let get: List(#(String, String, String)) = db.get_data(channel)
+
+  let message_list =
+    list.map(get, fn(name_amount) {
+      Message(name_amount.0, name_amount.1, name_amount.2, channel)
+    })
+
+  dispatch(GotMessages(message_list))
 }
 
 // VIEW ------------------------------------------------------------------------
