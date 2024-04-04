@@ -37,7 +37,7 @@ pub type Model {
 }
 
 fn init(_) -> #(Model, Effect(Msg)) {
-  #(Model("", "", "", "shinirc-1", []), effect.none())
+  #(Model("", "", "", "shinirc-1", []), fetch_messages("shinirc-1"))
 }
 
 // UPDATE ----------------------------------------------------------------------
@@ -64,7 +64,12 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           ),
           ..model.messages
         ]),
-        effect.none(),
+        push_message(Message(
+          model.username,
+          model.message,
+          birl.to_time_string(birl.now()),
+          model.channel,
+        )),
       )
     }
     UpdateUsername(username) -> #(
@@ -122,7 +127,7 @@ fn time_beautifier(time: String) -> String {
 
 // EFFECTS ---------------------------------------------------------------------
 
-fn add_expense(message: Message) -> effect.Effect(Msg) {
+fn push_message(message: Message) -> effect.Effect(Msg) {
   use dispatch <- effect.from
 
   let post =
@@ -135,8 +140,7 @@ fn add_expense(message: Message) -> effect.Effect(Msg) {
   dispatch(GotResponse(post))
 }
 
-// TODO: Implement fetching expenses from a database
-fn fetch_expenses(channel: String) -> effect.Effect(Msg) {
+fn fetch_messages(channel: String) -> effect.Effect(Msg) {
   use dispatch <- effect.from
 
   let get: List(#(String, String, String)) = db.get_data(channel)

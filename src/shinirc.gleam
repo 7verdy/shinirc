@@ -1,3 +1,4 @@
+import db
 import mvu
 import gleam/bytes_builder
 import gleam/erlang
@@ -5,6 +6,7 @@ import gleam/erlang/process.{type Selector, type Subject}
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
+import gleam/list
 import gleam/option.{type Option, None}
 import gleam/otp/actor
 import gleam/result
@@ -27,6 +29,9 @@ type SocketState {
 }
 
 pub fn main() {
+  ["shinirc-1", "shinirc-2", "shinirc-3"]
+  |> list.each(fn(channel) { db.create_table(channel) })
+
   let app = mvu.app()
   let assert Ok(shinirc) = lustre.start_actor(app, 0)
 
