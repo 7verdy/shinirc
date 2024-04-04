@@ -70,6 +70,9 @@ fn view(model: Model) -> Element(Msg) {
       ]),
     ]),
     html.div([attribute.id("chat")], [
+      html.div([attribute.id("channel-title")], [
+        html.h2([attribute.style(text_styles)], [element.text("General")]),
+      ]),
       html.div([attribute.id("channel-messages")], [
         case model.messages {
           [] ->

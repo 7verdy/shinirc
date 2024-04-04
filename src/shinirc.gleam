@@ -131,11 +131,6 @@ pub fn main() {
   process.sleep_forever()
 }
 
-// 
-
-type Shinirc =
-  Subject(lustre.Action(mvu.Msg, lustre.ServerComponent))
-
 fn socket_init(
   conn: WebsocketConnection,
   messages: Subject(lustre.Action(mvu.Msg, lustre.ServerComponent)),
